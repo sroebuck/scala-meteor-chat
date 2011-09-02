@@ -6,7 +6,7 @@ So, this project is based on the [meteor-chat example](https://github.com/Atmosp
 
 ## Changes to date
 
-So far this example is still completely in Java.  The only changes to date are the creation of an [sbt](https://github.com/harrah/xsbt/wiki) build file `build.sbt` which uses the [xsbt-web-plugin](https://github.com/siasia/xsbt-web-plugin) with it's configuration in the `project/plugins/build.sbt' file.
+So far this example is still completely in Java.  The only changes to date are the creation of an [sbt](https://github.com/harrah/xsbt/wiki) build file `build.sbt` which uses the [xsbt-web-plugin](https://github.com/siasia/xsbt-web-plugin) with it's configuration in the `project/plugins/build.sbt` file.
 
 This allows the project to be built and run with the command:
 
