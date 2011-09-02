@@ -13,14 +13,13 @@ logLevel := Level.Info
 traceLevel := 10
 
 libraryDependencies ++= {
-    val jettyVersion = "7.3+"
+    val jettyVersion = "8.0.0.M3"
     Seq(
-        "org.apache.geronimo.specs" % "geronimo-servlet_3.0_spec" % "+",
+        "org.apache.geronimo.specs" % "geronimo-servlet_3.0_spec" % "1.0",
         "org.eclipse.jetty" % "jetty-server" % jettyVersion % "jetty",
-//        "org.eclipse.jetty" % "jetty-jsp-2.1" % jettyVersion,
         "org.eclipse.jetty" % "jetty-websocket" % jettyVersion % "jetty",
         "org.eclipse.jetty" % "jetty-webapp" % jettyVersion % "jetty",
-        "ch.qos.logback" % "logback-classic" % "+"
+        "ch.qos.logback" % "logback-classic" % "0.9.29"
     )
 }
 
