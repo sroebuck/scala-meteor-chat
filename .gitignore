@@ -1,0 +1,8 @@
+.DS_Store
+.idea/
+.idea_modules/
+/target/
+/project/boot/
+/project/plugins/project/
+/project/plugins/target/
+/project/target/
