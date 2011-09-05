@@ -19,6 +19,7 @@ libraryDependencies ++= {
         "org.eclipse.jetty" % "jetty-server" % jettyVersion % "jetty",
         "org.eclipse.jetty" % "jetty-websocket" % jettyVersion % "jetty",
         "org.eclipse.jetty" % "jetty-webapp" % jettyVersion % "jetty",
+        "org.atmosphere" % "atmosphere-samples-commons" % "0.7.2",
         "ch.qos.logback" % "logback-classic" % "0.9.29"
     )
 }
@@ -26,9 +27,7 @@ libraryDependencies ++= {
 // Depend on atmosphere-samples-commons but exclude atmosphere-ping
 ivyXML :=
   <dependencies>
-    <dependency org="org.atmosphere" name="atmosphere-samples-commons" rev="0.7.2">
-      <exclude module="atmosphere-ping" />
-    </dependency>
+    <exclude org="org.atmosphere" module="atmosphere-ping" />
   </dependencies>
 
 resolvers ++= Seq(
