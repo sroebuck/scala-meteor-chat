@@ -6,6 +6,7 @@ import org.atmosphere.commons.util.EventsLogger
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse, HttpServlet}
 import org.atmosphere.cpr.{BroadcastFilter, Meteor}
 import java.util.LinkedList
+import com.weiglewilczek.slf4s.Logging
 
 /**
  * Simple Servlet that implement the logic to build a Chat application using
@@ -15,7 +16,7 @@ import java.util.LinkedList
  * @author TAKAI Naoto (Orginial author for the Comet based Chat).
  * @author Stuart Roebuck (conversion to Scala).
  */
-class ScalaMeteorChat extends HttpServlet {
+class ScalaMeteorChat extends HttpServlet with Logging {
 
   /**
    * List of {@link BroadcastFilter}
@@ -50,6 +51,8 @@ class ScalaMeteorChat extends HttpServlet {
     res.setCharacterEncoding("UTF-8")
     val action: String = req.getParameterValues("action")(0)
     val name: String = req.getParameterValues("name")(0)
+
+    logger.info("action: %s, name: %s".format(action, name))
 
     action match {
       case "login" =>
