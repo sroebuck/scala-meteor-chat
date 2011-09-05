@@ -2,7 +2,7 @@ name := "scala-meteor-chat"
 
 organization := "org.atmosphere"
 
-version := "0.8-SNAPSHOT"
+version := "0.7.2"
 
 scalaVersion := "2.9.1"
 
@@ -13,9 +13,9 @@ logLevel := Level.Info
 traceLevel := 10
 
 libraryDependencies ++= {
-    val jettyVersion = "8.0.0.M3"
+    val jettyVersion = "7.4.5.v20110725"
     Seq(
-        "org.apache.geronimo.specs" % "geronimo-servlet_3.0_spec" % "1.0",
+        "javax.servlet" % "javax.servlet-api" % "3.0.1" % "provided",
         "org.eclipse.jetty" % "jetty-server" % jettyVersion % "jetty",
         "org.eclipse.jetty" % "jetty-websocket" % jettyVersion % "jetty",
         "org.eclipse.jetty" % "jetty-webapp" % jettyVersion % "jetty",
@@ -26,7 +26,7 @@ libraryDependencies ++= {
 // Depend on atmosphere-samples-commons but exclude atmosphere-ping
 ivyXML :=
   <dependencies>
-    <dependency org="org.atmosphere" name="atmosphere-samples-commons" rev="0.8-SNAPSHOT">
+    <dependency org="org.atmosphere" name="atmosphere-samples-commons" rev="0.7.2">
       <exclude module="atmosphere-ping" />
     </dependency>
   </dependencies>

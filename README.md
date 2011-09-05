@@ -1,17 +1,21 @@
 # scala-meteor-chat
 
-This project is an attempt to get [Atmosphere](http://atmosphere.java.net/) working with Scala and Jetty.  I attempted to get it running in place of socket-io in a substantial project but I was getting nowhere fast, so I decided to boil things down into something repeatable and shareable.
+This project is an attempt to get [Atmosphere](http://atmosphere.java.net/) working with Scala and Jetty with as simple an example as possible.  I attempted to get it running in place of socket-io in a substantial project but I was getting nowhere fast, so I decided to boil things down into something repeatable and shareable.
 
 This project is based on the [meteor-chat example](https://github.com/Atmosphere/atmosphere/tree/master/samples/meteor-chat) provided with Atmosphere.
 
 ## Changes to date
 
-So far this example is still completely in Java.  The only changes to date are the creation of an [sbt](https://github.com/harrah/xsbt/wiki) build file `build.sbt` which uses the [xsbt-web-plugin](https://github.com/siasia/xsbt-web-plugin) with it's configuration in the `project/plugins/build.sbt` file.
+This example now appears to work and uses Scala.
+
+An [sbt](https://github.com/harrah/xsbt/wiki) build file `build.sbt` has been created which uses the [xsbt-web-plugin](https://github.com/siasia/xsbt-web-plugin) with it's configuration in the `project/plugins/build.sbt` file.
 
 This allows the project to be built and run with the commands:
 
     sbt
     > jetty-run
+
+The Java class "MeteorChat" has been converted to "Scala" with relatively little change in code style.
 
 On top of that I have carried out some changes described below as fixes to problems I encountered.
 
@@ -26,6 +30,9 @@ Now I have still have a problem as there is an error message being generated alt
      HttpServletResponse: HTTP/1.1 200 
 
 Note, in particular the `has suspended a connection from 0:0:0:0:0:0:0:1%0` error message.
+
+However, I'm not sure this is actually an error, it may just be information output related to the using Comet.  So my
+next issue is to get it to use websockets.
 
 ## Problems along the way
 
@@ -58,6 +65,29 @@ Here was the error stacktrace:
     	at org.eclipse.jetty.websocket.WebSocketServlet.service(WebSocketServlet.java:86)
     	at javax.servlet.http.HttpServlet.service(HttpServlet.java:820)
     	at org.eclipse.jetty.servlet.ServletHolder.handle(ServletHolder.java:534)
+
+However, having read more about the version of Jetty here: <http://java.dzone.com/articles/roadmap-jetty-6-jetty-7-and>
+I would prefer to run under Jetty 7 which seems more aligned to likely deployment at the present time.
+
+I tried what appeared to be the latest official release: `7.5.0.v20110901` but this failed with a different error.
+
+I tried the latest official release from one of the maven indexes: `7.4.5.v20110725` but this failed with the same `isAsyncStarted` error which I now understand to be due to the lack of Servlet 3.0 support.  So I tried this save
+version with Atmosphere `0.7.2`.  This still generated the `isAsyncStarted` error.  However, given that this was trying to use the Servlet 3.0 API I noticed that I was including:
+
+    "org.apache.geronimo.specs" % "geronimo-servlet_3.0_spec" % "1.0",
+
+and changed this back to:
+
+    "org.apache.geronimo.specs" % "geronimo-servlet_2.4_spec" % "1.0",
+
+and it worked.  Then I noticed that the `scalatra` codebase chose to include:
+
+    "javax.servlet" % "javax.servlet-api" % "3.0.1" % "provided"
+
+instead, so I tried that and, although it is the Servlet 3.x API it also works!
+
+I also tried changing the version of Atmosphere back to `0.7.2` and found that this worked fine again.  So my conslusion
+here is that it is much better to include: `javax.servlet-api 3.0.1` than `geronimo-servlet_3.0_spec 1.0`.    
 
 ## Help much appreciated
 

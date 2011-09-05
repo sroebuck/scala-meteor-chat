@@ -15,7 +15,7 @@ import java.util.LinkedList
  * @author TAKAI Naoto (Orginial author for the Comet based Chat).
  * @author Stuart Roebuck (conversion to Scala).
  */
-class MeteorChatScala extends HttpServlet {
+class ScalaMeteorChat extends HttpServlet {
 
   /**
    * List of {@link BroadcastFilter}
@@ -73,7 +73,7 @@ class MeteorChatScala extends HttpServlet {
 
 }
 
-object MeteorChatScala {
+object ScalaMeteorChat {
   private final val serialVersionUID: Long = -2919167206889576860L
 }
 
