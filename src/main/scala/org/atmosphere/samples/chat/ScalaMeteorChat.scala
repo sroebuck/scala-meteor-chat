@@ -35,7 +35,8 @@ class ScalaMeteorChat extends HttpServlet with Logging {
     val m: Meteor = Meteor.build(req, list, null)
     m.addListener(new EventsLogger)
     req.getSession.setAttribute("meteor", m)
-    res.setContentType("text/html;charset=ISO-8859-1")
+//    res.setContentType("text/html;charset=ISO-8859-1")
+    res.setContentType("text/html;charset=UTF-8")
     m.suspend(-1)
     m.broadcast(req.getServerName + "__has suspended a connection from " + req.getRemoteAddr)
   }
