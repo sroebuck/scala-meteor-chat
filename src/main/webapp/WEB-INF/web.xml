@@ -24,7 +24,7 @@
     </servlet>
     <servlet-mapping>
         <servlet-name>MeteorServlet</servlet-name>
-        <url-pattern>/Meteor</url-pattern>
+        <url-pattern>/Meteor/*</url-pattern>
     </servlet-mapping>
     <session-config>
         <session-timeout>25</session-timeout>

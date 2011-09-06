@@ -1,25 +1,34 @@
 # scala-meteor-chat
 
-This project is an attempt to get [Atmosphere](http://atmosphere.java.net/) working with Scala and Jetty with as simple an example as possible.  I attempted to get it running in place of socket-io in a substantial project but I was getting nowhere fast, so I decided to boil things down into something repeatable and shareable.
+This project is an attempt to get [Atmosphere](http://atmosphere.java.net/) working with Scala and Jetty with as simple an example as possible.  This project is based on the [meteor-chat example](https://github.com/Atmosphere/atmosphere/tree/master/samples/meteor-chat) provided with Atmosphere.
 
-This project is based on the [meteor-chat example](https://github.com/Atmosphere/atmosphere/tree/master/samples/meteor-chat) provided with Atmosphere.  The commit
-tagged `prototype.js` is a working version using the Prototype.js libraries.  I then modified it to use jQuery to
-cut down the dependencies and work towards using the Atmosphere jQuery Plugin to enable multiple transport support.
+The implementation has now moved to using jQuery instead of Prototype as a JavaScript backend and the latest change is
+to utilise the Atmosphere jQuery plugin for client side websocket interaction and to put in place a simple Scala wrapper
+around the Meteor object to simplify use.
+
+The commit tagged `prototype.js` is a working version using the Prototype.js libraries. I then modified it to use jQuery
+to cut down the dependencies, this working version was tagged `jquery.js`. Now the current version uses the Atmosphere
+jQuery Plugin to enable multiple transport support.
 
 ## Changes to date
 
-This example now works and uses Scala and jQuery.
+* An [sbt](https://github.com/harrah/xsbt/wiki) build file `build.sbt` has been created which uses the [xsbt-web-plugin](https://github.com/siasia/xsbt-web-plugin) with it's configuration in the `project/plugins/build.sbt` file.
 
-An [sbt](https://github.com/harrah/xsbt/wiki) build file `build.sbt` has been created which uses the [xsbt-web-plugin](https://github.com/siasia/xsbt-web-plugin) with it's configuration in the `project/plugins/build.sbt` file.
-
-This allows the project to be built and run with the commands:
+  This allows the project to be built and run with the commands:
 
     sbt
     > jetty-run
 
-The Java class `MeteorChat` has been converted to Scala with relatively little change in code style.
+* The Java class `MeteorChat` has been converted to Scala with relatively little change in code style.
 
-The `application.js` file has been converted from `prototype.js` to `jquery.js`.
+* The `application.js` file has been converted from `prototype.js` to `jquery.js`.
+
+* The jQuery and Atmosphere jQuery plugin libraries have been added.
+
+* A simple Scala wrapper around the Meteor class has been added.
+
+* The `application.js` file has been converted to use the Atmosphere jQuery plugin rather than direct hard coded
+jQuery ajax calls.
 
 On top of that I have carried out some changes described below as fixes to problems I encountered.
 
@@ -103,7 +112,3 @@ The next workaround (which I haven't tried, but is listed in the explanation abo
 However, setting the transfer encoding to 'chunked' doesn't appear to be so easy with the Servlet API.  Apparently if
 the output buffering is switched off and the size is not sent then it should default to `chunked` but I haven't been
 able to find a way of making that work yet!
-
-
-
-

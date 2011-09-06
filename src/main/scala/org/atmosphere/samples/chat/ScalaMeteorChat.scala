@@ -1,12 +1,9 @@
 package org.atmosphere.samples.chat
 
-import org.atmosphere.util.XSSHtmlFilter
-import org.atmosphere.commons.jersey.JsonpFilter
-import org.atmosphere.commons.util.EventsLogger
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse, HttpServlet}
-import org.atmosphere.cpr.{BroadcastFilter, Meteor}
-import java.util.LinkedList
 import com.weiglewilczek.slf4s.Logging
+import org.atmosphere.cpr.{AtmosphereResourceEventListener, BroadcastFilter, Meteor}
+import org.atmosphere.commons.util.EventsLogger
 
 /**
  * Simple Servlet that implement the logic to build a Chat application using
@@ -18,27 +15,23 @@ import com.weiglewilczek.slf4s.Logging
  */
 class ScalaMeteorChat extends HttpServlet with Logging {
 
-  /**
-   * List of {@link BroadcastFilter}
-   */
-  private final val list: LinkedList[BroadcastFilter] = new LinkedList[BroadcastFilter]
+  private def newMeteorForRequestResponse(request: HttpServletRequest, response: HttpServletResponse): MyMeteor = {
+    val mym = MyMeteor(request)
+    request.getSession.setAttribute("mymeteor", mym)
+    response.setContentType("text/html;charset=UTF-8")
+    mym.suspend()
+    mym
+  }
 
-  list.add(new XSSHtmlFilter)
-  list.add(new JsonpFilter)
 
   /**
    * Create a {@link Meteor} and use it to suspend the response.
    * @param req An {@link HttpServletRequest}
    * @param res An {@link HttpServletResponse}
    */
-  override def doGet(req: HttpServletRequest, res: HttpServletResponse) {
-    val m: Meteor = Meteor.build(req, list, null)
-    m.addListener(new EventsLogger)
-    req.getSession.setAttribute("meteor", m)
-//    res.setContentType("text/html;charset=ISO-8859-1")
-    res.setContentType("text/html;charset=UTF-8")
-    m.suspend(-1)
-    m.broadcast(req.getServerName + "__has suspended a connection from " + req.getRemoteAddr)
+  override def doGet(request: HttpServletRequest, response: HttpServletResponse) {
+    val mym = newMeteorForRequestResponse(request, response)
+    mym.broadcast("%s has suspended a connection from %s".format(request.getServerName, request.getRemoteAddr))
   }
 
   /**
@@ -47,37 +40,76 @@ class ScalaMeteorChat extends HttpServlet with Logging {
    * @param req An {@link HttpServletRequest}
    * @param res An {@link HttpServletResponse}
    */
-  override def doPost(req: HttpServletRequest, res: HttpServletResponse) {
-    val m: Meteor = req.getSession.getAttribute("meteor").asInstanceOf[Meteor]
-    res.setCharacterEncoding("UTF-8")
-    val action: String = req.getParameterValues("action")(0)
-    val name: String = req.getParameterValues("name")(0)
+  override def doPost(request: HttpServletRequest, response: HttpServletResponse) {
+    val mym: MyMeteor = Option(request.getSession.getAttribute("mymeteor")) match {
+      case None => newMeteorForRequestResponse(request, response)
+      case Some(mym: MyMeteor) => mym
+      case _ => logger.error("Unexpected situation!"); null
+    }
+    response.setCharacterEncoding("UTF-8")
+    val action: String = request.getParameterValues("action")(0)
+    val name: String = request.getParameterValues("name")(0)
 
     logger.info("action: %s, name: %s".format(action, name))
 
     action match {
       case "login" =>
-        req.getSession.setAttribute("name", name)
-        m.broadcast("System Message from " + req.getServerName + "__" + name + " has joined.")
-        res.getWriter.write("success")
-        res.getWriter.flush()
+        request.getSession.setAttribute("name", name)
+        mym.broadcast("System Message from %s:  %s has joined".format(request.getServerName, name))
 
       case "post" =>
-        val message: String = req.getParameterValues("message")(0)
-        m.broadcast(name + "__" + message)
-        res.getWriter.write("success")
-        res.getWriter.flush()
+        val message: String = request.getParameterValues("message")(0)
+        mym.broadcast("%s\n  %s".format(name,message))
 
       case _ =>
-        res.setStatus(422)
-        res.getWriter.write("success")
-        res.getWriter.flush()
+        response.setStatus(422)
     }
   }
 
 }
 
-object ScalaMeteorChat {
-  private final val serialVersionUID: Long = -2919167206889576860L
-}
 
+
+/**
+ * Simple Scala wrapper for Atmosphere.Meteor class.
+ *
+ * @param request the incoming HttpServletRequest from which to establish a long-polling transport.
+ * @param filters BroadcastFilters that filter any data sent to the client.
+ * @param withEventsLogger if true this enables logging of all events occuring to the Meteor object.
+ */
+case class MyMeteor(request: HttpServletRequest,
+                    filters: Set[BroadcastFilter] = Set(),
+                    withEventsLogger: Boolean = true) {
+
+  import scala.collection.JavaConversions._
+
+  lazy val meteor = {
+    val m = Meteor.build(request, filters.toList, null)
+    if (withEventsLogger) m.addListener(new EventsLogger)
+    m
+  }
+
+  /**
+   * Add a listener that will be sent every event that occurs with the Meteor, whether it is the arrival of data or the
+   * sending of data.  You can add more than one listener and they will all receive all events.
+   */
+  def addListener(eventsListener: AtmosphereResourceEventListener) { meteor.addListener(eventsListener)}
+
+  /**
+   * Suspend the long-polling connection.  In other words, hold it ready to send a response to the client whenever
+   * required.
+   */
+  def suspend(timeLimitMillis: Int = -1) {
+    meteor.suspend(timeLimitMillis)
+  }
+
+  /**
+   * Broadcast a message on the suspended Meteor.
+   */
+  def broadcast(data: String) {
+    // Note that the native broadcast takes an object, so there is probably extra functionality to be unlocked by
+    // expanding support beyond a simple String.
+    meteor.broadcast(data)
+  }
+
+}
