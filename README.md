@@ -17,7 +17,9 @@ This allows the project to be built and run with the commands:
     sbt
     > jetty-run
 
-The Java class "MeteorChat" has been converted to "Scala" with relatively little change in code style.
+The Java class `MeteorChat` has been converted to Scala with relatively little change in code style.
+
+The `application.js` file has been converted from `prototype.js` to `jquery.js`.
 
 On top of that I have carried out some changes described below as fixes to problems I encountered.
 
@@ -76,7 +78,7 @@ instead, so I tried that and, although it is the Servlet 3.x API it also works!
 I also tried changing the version of Atmosphere back to `0.7.2` and found that this worked fine again.  So my conslusion
 here is that it is much better to include: `javax.servlet-api 3.0.1` than `geronimo-servlet_3.0_spec 1.0`.    
 
-## Delayed output on Webkit browsers
+### Delayed output on Webkit browsers
 
 I encountered delayed output on Webkit based browsers which seems to have been resolved by explicitly setting the
 content type of the response to:
