@@ -17,16 +17,6 @@ import net.liftweb.json.JsonParser
  */
 class ScalaMeteorChat extends HttpServlet with AtmosphereResourceEventListener with Logging {
 
-  private def newMeteorForRequestResponse(request: HttpServletRequest, response: HttpServletResponse): MyMeteor = {
-    logger.info("-> newMeteorForRequestResponse")
-    val mym = MyMeteor(request, listeners = Seq(this))
-    request.getSession.setAttribute("mymeteor", mym)
-    response.setContentType("text/html;charset=UTF-8")
-    mym.suspend()
-    mym
-  }
-
-
   /**
    * Create a {@link Meteor} and use it to suspend the response.
    * @param req An {@link HttpServletRequest}
@@ -34,7 +24,7 @@ class ScalaMeteorChat extends HttpServlet with AtmosphereResourceEventListener w
    */
   override def doGet(request: HttpServletRequest, response: HttpServletResponse) {
     logger.info("-> doGet")
-    val mym = newMeteorForRequestResponse(request, response)
+    val mym = getMeteorForRequestResponse(request, response)
     mym.broadcast("%s has suspended a connection from %s".format(request.getServerName, request.getRemoteAddr))
   }
 
@@ -46,12 +36,8 @@ class ScalaMeteorChat extends HttpServlet with AtmosphereResourceEventListener w
    */
   override def doPost(request: HttpServletRequest, response: HttpServletResponse) {
     logger.info("-> doPost")
-    val myMeteor: MyMeteor = Option(request.getSession.getAttribute("mymeteor")) match {
-      case None => newMeteorForRequestResponse(request, response)
-      case Some(mym: MyMeteor) => mym
-      case _ => logger.error("Unexpected situation!"); null
-    }
-    onMeteorBroadcast(myMeteor, request, response)
+    val myMeteor = getMeteorForRequestResponse(request, response)
+    onReceiptOfBroadcast(myMeteor, request, response)
   }
 
   def onSuspend(event: AtmosphereResourceEvent[HttpServletRequest, HttpServletResponse]) {
@@ -72,21 +58,36 @@ class ScalaMeteorChat extends HttpServlet with AtmosphereResourceEventListener w
    */
   def onBroadcast(event: AtmosphereResourceEvent[HttpServletRequest, HttpServletResponse]) {
     logger.info("-> onBroadcast - %s".format(event.getMessage))
-    val response = event.getResource.getResponse
-    val request = event.getResource.getRequest
-    val mym = MyMeteor(Meteor.lookup(request))
-    logger.info("event.getMessage: %s".format(event.getMessage))
-//    val message = event.getMessage.toString
-//    val values = JsonParser.parse(message).values
-//    logger.info("values: %s".format(values))
   }
 
   def onThrowable(event: AtmosphereResourceEvent[HttpServletRequest, HttpServletResponse]) {
     logger.info("-> onThrowable")
   }
 
+  /**
+   * Given a request and response, return the MyMeteor session attribute previously associated with the session or
+   * create a new MyMeteor object and attach it to the session for future use.
+   */
+  private def getMeteorForRequestResponse(request: HttpServletRequest, response: HttpServletResponse): MyMeteor = {
+    logger.info("-> newMeteorForRequestResponse")
 
-  private def onMeteorBroadcast(myMeteor: MyMeteor, request: HttpServletRequest, response: HttpServletResponse) {
+    Option(request.getSession.getAttribute("mymeteor")) match {
+      case None =>
+        val mym = MyMeteor(request, listeners = Seq(this))
+        request.getSession.setAttribute("mymeteor", mym)
+        response.setContentType("text/html;charset=UTF-8")
+        mym.suspend()
+        mym
+      case Some(mym: MyMeteor) => mym
+      case _ => logger.error("Unexpected situation!"); null
+    }
+  }
+
+
+  /**
+   * Handle a message received that appears to be a "Post" but may come from a Meteor.
+   */
+  private def onReceiptOfBroadcast(myMeteor: MyMeteor, request: HttpServletRequest, response: HttpServletResponse) {
     logger.info("==> onMeteorBroadcast")
 //    response.setCharacterEncoding("UTF-8")
     val action: String = request.getParameterValues("action")(0)
