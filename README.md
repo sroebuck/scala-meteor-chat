@@ -112,3 +112,16 @@ The next workaround (which I haven't tried, but is listed in the explanation abo
 However, setting the transfer encoding to 'chunked' doesn't appear to be so easy with the Servlet API.  Apparently if
 the output buffering is switched off and the size is not sent then it should default to `chunked` but I haven't been
 able to find a way of making that work yet!
+
+### Websocket support not working in Firefox 8 and Opera 11
+
+This stackoverflow question answers the question of which browsers support WebSockets: <http://stackoverflow.com/questions/1253683/websocket-for-html5>.
+
+One of the links: <http://techdows.com/2010/12/turn-on-websockets-in-firefox-4.html> explains how to enable WebSocket
+support in Firefox releases that have it implemented but disabled.
+
+However, to add to the confusion the websocket object has been renamed in the later versions of Firefox so you use
+`MozWebSocket` rather than `WebSocket`
+
+I therefore modified the atmosphere.jquery.js library to check for either `WebSocket` or `MozWebSocket` before falling
+back to Comet, and to use `MozWebSocket` rather than `WebSocket` to create the socket if the latter was not available.

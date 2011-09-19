@@ -20,7 +20,8 @@ var app = {
         $('#message-form').css('display', '');
 
         var query = 'action=login' + '&name=' + encodeURI($('#login-name').val());
-        app.websocketSend(query, function() {
+        app.websocketSend(query, function(response) {
+            console.log("login callback called");
             $('#message').focus();
         });
     },
@@ -34,7 +35,8 @@ var app = {
         $('#post-button').prop('disabled', true);
 
         var query = 'action=post' + '&name=' + encodeURI($('#login-name').val()) + '&message=' + encodeURI(message);
-        app.websocketSend(query, function() {
+        app.websocketSend(query, function(response) {
+            console.log("post callback called");
             $('#message').prop('disabled', false);
             $('#post-button').prop('disabled', false);
             $('#message').focus();
@@ -75,7 +77,10 @@ var app = {
     },
 
     websocketCallback: function(response) {
+        console.log("websocketCallback called");
         var responseText = response.responseBody;
+        console.log("response = ");
+        console.log(response);
         app.update(responseText);
     },
 

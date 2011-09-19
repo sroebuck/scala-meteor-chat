@@ -13,16 +13,22 @@ logLevel := Level.Info
 traceLevel := 10
 
 libraryDependencies ++= {
-    val jettyVersion = "7.4.5.v20110725"
-    val atmosphereVersion = "0.7.2"
+//    val jettyVersion = "7.4.5.v20110725"
+//    val jettyVersion = "7.5.1.v20110908"
+//    val jettyVersion = "8.0.0.M3"
+    val jettyVersion = "8.0.1.v20110908"
+//    val atmosphereVersion = "0.7.2"
+    val atmosphereVersion = "0.8-SNAPSHOT"
     Seq(
         "javax.servlet" % "javax.servlet-api" % "3.0.1" % "provided",
+//        "javax.servlet.jsp" % "javax.servlet.jsp-api" % "2.2.1",
         "org.eclipse.jetty" % "jetty-server" % jettyVersion % "jetty",
         "org.eclipse.jetty" % "jetty-websocket" % jettyVersion % "jetty",
         "org.eclipse.jetty" % "jetty-webapp" % jettyVersion % "jetty",
         "org.atmosphere" % "atmosphere-samples-commons" % atmosphereVersion,
         "com.weiglewilczek.slf4s" %% "slf4s" % "1.0.7",
-        "ch.qos.logback" % "logback-classic" % "0.9.29"
+        "ch.qos.logback" % "logback-classic" % "0.9.29",
+        "net.liftweb" %% "lift-json" % "2.4-M4"      
     )
 }
 
