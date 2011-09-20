@@ -24,8 +24,7 @@ class ScalaMeteorChat extends HttpServlet with AtmosphereResourceEventListener w
    */
   override def doGet(request: HttpServletRequest, response: HttpServletResponse) {
     logger.info("-> doGet")
-    val mym = getMeteorForRequestResponse(request, response)
-    mym.broadcast("%s has suspended a connection from %s".format(request.getServerName, request.getRemoteAddr))
+    MyMeteor(request, listeners = Seq(this))
   }
 
   /**
@@ -36,7 +35,7 @@ class ScalaMeteorChat extends HttpServlet with AtmosphereResourceEventListener w
    */
   override def doPost(request: HttpServletRequest, response: HttpServletResponse) {
     logger.info("-> doPost")
-    val myMeteor = getMeteorForRequestResponse(request, response)
+    val myMeteor = MyMeteor(request, listeners = Seq(this))
     onReceiptOfBroadcast(myMeteor, request, response)
   }
 
@@ -65,17 +64,6 @@ class ScalaMeteorChat extends HttpServlet with AtmosphereResourceEventListener w
   }
 
   /**
-   * Given a request and response, return the MyMeteor session attribute previously associated with the session or
-   * create a new MyMeteor object and attach it to the session for future use.
-   */
-  private def getMeteorForRequestResponse(request: HttpServletRequest, response: HttpServletResponse): MyMeteor = {
-    logger.info("-> newMeteorForRequestResponse")
-    response.setContentType("text/html;charset=UTF-8")
-    MyMeteor(request, listeners = Seq(this))
-  }
-
-
-  /**
    * Handle a message received that appears to be a "Post" but may come from a Meteor.
    */
   private def onReceiptOfBroadcast(myMeteor: MyMeteor, request: HttpServletRequest, response: HttpServletResponse) {
@@ -83,9 +71,9 @@ class ScalaMeteorChat extends HttpServlet with AtmosphereResourceEventListener w
     response.setCharacterEncoding("UTF-8")
     val action: String = request.getParameterValues("action")(0)
     val name: String = request.getParameterValues("name")(0)
+    logger.info("action: %s, name: %s".format(action, name))
 //    logger.info("request.getParts: %s".format(request.getParts.toList))
 
-    logger.info("action: %s, name: %s".format(action, name))
 
     action match {
       case "login" =>
@@ -141,9 +129,7 @@ case class MyMeteor(meteor: Meteor) {
 
 }
 
-object MyMeteor {
-
-  import scala.collection.JavaConversions._
+object MyMeteor extends Logging {
 
   /**
    * Create a Meteor object or return one that has already been cached for the particular HttpServletRequest.
@@ -151,10 +137,17 @@ object MyMeteor {
   def apply(request: HttpServletRequest,
             filters: Set[BroadcastFilter] = Set(),
             listeners: Seq[AtmosphereResourceEventListener] = Seq(new EventsLogger)): MyMeteor = {
-    Option(Meteor.lookup(request)).map(MyMeteor(_)).getOrElse {
-      val m = Meteor.build(request, filters.toList, null)
-      listeners.foreach(m.addListener(_))
-      MyMeteor(m).suspend()
+    val session = request.getSession
+    Option(session.getAttribute("meteor")) match {
+      case Some(mm: MyMeteor) => mm
+      case None =>
+        logger.warn("Building a new Meteor!")
+        val m = Meteor.build(request, filters.toList, null)
+        listeners.foreach(m.addListener(_))
+        val mm = MyMeteor(m).suspend()
+        session.setAttribute("meteor", mm)
+        mm
+      case _ => throw new RuntimeException("This shouldn't happen!")
     }
   }
 
