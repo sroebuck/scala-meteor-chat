@@ -1,9 +1,6 @@
 var count = 0;
 var app = {
 
-    url: '/Meteor',
-
-    METEOR_URL: function() { return app.url; },
 
     login: function() {
         var name = $('#login-name').val();
@@ -20,7 +17,7 @@ var app = {
         $('#message-form').css('display', '');
 
         var query = 'action=login' + '&name=' + encodeURI($('#login-name').val());
-        app.websocketSend(query, function(response) {
+        atmoWrapper.websocketSend(this.url, query, function(response) {
             console.log("login callback called");
             $('#message').focus();
         });
@@ -35,7 +32,7 @@ var app = {
         $('#post-button').prop('disabled', true);
 
         var query = 'action=post' + '&name=' + encodeURI($('#login-name').val()) + '&message=' + encodeURI(message);
-        app.websocketSend(query, function(response) {
+        atmoWrapper.websocketSend(this.url, query, function(response) {
             console.log("post callback called");
             $('#message').prop('disabled', false);
             $('#post-button').prop('disabled', false);
@@ -53,7 +50,8 @@ var app = {
         $("#display").prop('scrollTop', $('#display').prop('scrollHeight'));
     },
 
-    setupPageInteraction: function() {
+    setupPageInteraction: function(url) {
+        this.url = url
         $('#login-name').bind('keydown', function(e) {
             if (e.keyCode == 13) {
                 $('#login-button').click();
@@ -69,34 +67,64 @@ var app = {
         $('#login-name').focus();
     },
 
-    websocketConnect: function() {
-        $.atmosphere.subscribe(
-            app.METEOR_URL(),
-            app.websocketCallback,
-            $.atmosphere.request = { transport: 'websocket' } );
-    },
-
     websocketCallback: function(response) {
         console.log("websocketCallback called");
         var responseText = response.responseBody;
         console.log("response = ");
         console.log(response);
         app.update(responseText);
+    }
+
+}
+
+// This is a wrapper for the atmosphere jQuery Plugin.  The principle reason for writing this wrapper is in order to
+// document the interface so that I've got more of a clue about what is going on.
+var atmoWrapper = {
+
+    // Establish a websocket connection with the host server.  Negotiate the protocol, falling back to an alternative
+    // like comet if the client or server does not support websockets.
+    //
+    // `url` is the URL used to establish a websocket on the server.  The first stage of establishing that
+    //    connection is sending a GET to that URL.
+    //
+    // `callback` is a function that will be called whenever a websocket message is sent to this client.  The function
+    //   should take one parameter which is the `response` object.
+
+    websocketConnect: function(url, callback) {
+        $.atmosphere.subscribe(
+            url,
+            callback,
+            $.atmosphere.request = { transport: 'websocket' } )
     },
 
-    websocketSend: function(data, callback) {
+    // Send a message over the established websocket connection or on whatever protocol has been fallen back to.
+    // At present this is configured to encode the data as if it was a web form, but it appears as though this
+    // configuration works for comet but not for websocket.
+    //
+    // `url` is the URL used to establish a websocket on the server.  The first stage of establishing that
+    //    connection is sending a GET to that URL.
+    //
+    // `data` is the data to send over the connection.
+    //
+    // `callback` is a function that will be called whenever a websocket message is sent to this client.  The function
+    //   should take one parameter which is the `response` object.
+
+    websocketSend: function(url, data, callback) {
         $.atmosphere.response.push(
-            app.METEOR_URL(),
+            url,
             callback,
             $.atmosphere.request = {
                 'data': data,
                 'contentType': 'application/x-www-form-urlencoded'
-            });
+            })
     }
 
-};
+}
+
 
 $(function() {
-    app.websocketConnect();
-    app.setupPageInteraction();
+    var METEOR_URL = '/Meteor';
+
+    atmoWrapper.websocketConnect(METEOR_URL, app.websocketCallback);
+    app.setupPageInteraction(METEOR_URL);
 });

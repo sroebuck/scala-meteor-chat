@@ -89,7 +89,7 @@ class ScalaMeteorChat extends HttpServlet with AtmosphereResourceEventListener w
    */
   private def onReceiptOfBroadcast(myMeteor: MyMeteor, request: HttpServletRequest, response: HttpServletResponse) {
     logger.info("==> onMeteorBroadcast")
-//    response.setCharacterEncoding("UTF-8")
+    response.setCharacterEncoding("UTF-8")
     val action: String = request.getParameterValues("action")(0)
     val name: String = request.getParameterValues("name")(0)
 //    logger.info("request.getParts: %s".format(request.getParts.toList))
