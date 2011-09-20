@@ -24,7 +24,7 @@ class ScalaMeteorChat extends HttpServlet with AtmosphereResourceEventListener w
    */
   override def doGet(request: HttpServletRequest, response: HttpServletResponse) {
     logger.info("-> doGet")
-    MyMeteor(request, listeners = Seq(this))
+    MyMeteor(request, listeners = Seq(this, new EventsLogger))
   }
 
   /**
@@ -35,7 +35,7 @@ class ScalaMeteorChat extends HttpServlet with AtmosphereResourceEventListener w
    */
   override def doPost(request: HttpServletRequest, response: HttpServletResponse) {
     logger.info("-> doPost")
-    val myMeteor = MyMeteor(request, listeners = Seq(this))
+    val myMeteor = MyMeteor(request, listeners = Seq(this, new EventsLogger))
     onReceiptOfBroadcast(myMeteor, request, response)
   }
 

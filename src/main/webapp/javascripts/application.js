@@ -94,7 +94,8 @@ var atmoWrapper = {
         $.atmosphere.subscribe(
             url,
             callback,
-            $.atmosphere.request = { transport: 'websocket' } )
+            $.atmosphere.request = { transport: 'polling' } )
+//            $.atmosphere.request = { transport: 'websocket' } )
     },
 
     // Send a message over the established websocket connection or on whatever protocol has been fallen back to.
@@ -111,11 +112,11 @@ var atmoWrapper = {
 
     websocketSend: function(url, data, callback) {
         console.log("websocketSend -> about to send: " + data);
-        console.log("Push function = ");
-        console.log($.atmosphere.response.push);
-        var ws = $.atmosphere.websocket;
-        console.log("Websocket = ");
-        console.log(ws);
+//        console.log("Push function = ");
+//        console.log($.atmosphere.response.push);
+//        var ws = $.atmosphere.websocket;
+//        console.log("Websocket = ");
+//        console.log(ws);
 
         // The syntax for the push function appeared to be as commented out below from examples, but looking at the
         // code it appears to just take a single argument and obtain the data from the global variable:
@@ -130,6 +131,8 @@ var atmoWrapper = {
 //                'contentType': 'application/x-www-form-urlencoded'
 //            })
 
+        $.atmosphere.request.method = 'POST';
+        $.atmosphere.request.contentType = 'application/x-www-form-urlencoded';
         $.atmosphere.request.data = data;
         $.atmosphere.response.push(url);
 
