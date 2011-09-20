@@ -70,17 +70,8 @@ class ScalaMeteorChat extends HttpServlet with AtmosphereResourceEventListener w
    */
   private def getMeteorForRequestResponse(request: HttpServletRequest, response: HttpServletResponse): MyMeteor = {
     logger.info("-> newMeteorForRequestResponse")
-
-    Option(request.getSession.getAttribute("mymeteor")) match {
-      case None =>
-        val mym = MyMeteor(request, listeners = Seq(this))
-        request.getSession.setAttribute("mymeteor", mym)
-        response.setContentType("text/html;charset=UTF-8")
-        mym.suspend()
-        mym
-      case Some(mym: MyMeteor) => mym
-      case _ => logger.error("Unexpected situation!"); null
-    }
+    response.setContentType("text/html;charset=UTF-8")
+    MyMeteor(request, listeners = Seq(this))
   }
 
 
@@ -134,8 +125,9 @@ case class MyMeteor(meteor: Meteor) {
    * Suspend the long-polling connection.  In other words, hold it ready to send a response to the client whenever
    * required.
    */
-  def suspend(timeLimitMillis: Int = -1) {
+  def suspend(timeLimitMillis: Int = -1): MyMeteor = {
     meteor.suspend(timeLimitMillis)
+    this
   }
 
   /**
@@ -153,12 +145,17 @@ object MyMeteor {
 
   import scala.collection.JavaConversions._
 
+  /**
+   * Create a Meteor object or return one that has already been cached for the particular HttpServletRequest.
+   */
   def apply(request: HttpServletRequest,
             filters: Set[BroadcastFilter] = Set(),
             listeners: Seq[AtmosphereResourceEventListener] = Seq(new EventsLogger)): MyMeteor = {
-    val m = Meteor.build(request, filters.toList, null)
-    listeners.foreach(m.addListener(_))
-    MyMeteor(m)
+    Option(Meteor.lookup(request)).map(MyMeteor(_)).getOrElse {
+      val m = Meteor.build(request, filters.toList, null)
+      listeners.foreach(m.addListener(_))
+      MyMeteor(m).suspend()
+    }
   }
 
 }
