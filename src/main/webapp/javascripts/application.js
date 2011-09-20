@@ -110,13 +110,30 @@ var atmoWrapper = {
     //   should take one parameter which is the `response` object.
 
     websocketSend: function(url, data, callback) {
-        $.atmosphere.response.push(
-            url,
-            callback,
-            $.atmosphere.request = {
-                'data': data,
-                'contentType': 'application/x-www-form-urlencoded'
-            })
+        console.log("websocketSend -> about to send: " + data);
+        console.log("Push function = ");
+        console.log($.atmosphere.response.push);
+        var ws = $.atmosphere.websocket;
+        console.log("Websocket = ");
+        console.log(ws);
+
+        // The syntax for the push function appeared to be as commented out below from examples, but looking at the
+        // code it appears to just take a single argument and obtain the data from the global variable:
+        // `$.atmosphere.request.data`.  So I've changed the call to the one below that is clear and explicit in
+        // what it's doing.
+
+//        $.atmosphere.response.push(
+//            url,
+//            callback,
+//            $.atmosphere.request = {
+//                'data': data,
+//                'contentType': 'application/x-www-form-urlencoded'
+//            })
+
+        $.atmosphere.request.data = data;
+        $.atmosphere.response.push(url);
+
+        callback(null);
     }
 
 }
