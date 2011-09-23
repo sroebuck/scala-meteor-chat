@@ -68,7 +68,7 @@ var app = {
     },
 
     websocketCallback: function(response) {
-        console.log("websocketCallback called");
+        console.log("websocketCallback state = " + response.state);
         var responseText = response.responseBody;
         console.log("response = ");
         console.log(response);
@@ -88,13 +88,19 @@ var atmoWrapper = {
     //    connection is sending a GET to that URL.
     //
     // `callback` is a function that will be called whenever a websocket message is sent to this client.  The function
-    //   should take one parameter which is the `response` object.
+    //    should take one parameter which is the `response` object.
+    //
+    // `transport` is the first kind of transport to attempt.  Possible values include "websocket", "long-polling" and
+    //   "streaming".
 
-    websocketConnect: function(url, callback) {
+    websocketConnect: function(url, callback, transport) {
         $.atmosphere.subscribe(
             url,
             callback,
-            $.atmosphere.request = { transport: 'polling' } )
+            $.atmosphere.request = {
+                'logLevel': 'debug',
+                'transport': transport
+            } )
 //            $.atmosphere.request = { transport: 'websocket' } )
     },
 
@@ -145,6 +151,6 @@ var atmoWrapper = {
 $(function() {
     var METEOR_URL = '/Meteor';
 
-    atmoWrapper.websocketConnect(METEOR_URL, app.websocketCallback);
+    atmoWrapper.websocketConnect(METEOR_URL, app.websocketCallback, "websocket");
     app.setupPageInteraction(METEOR_URL);
 });
