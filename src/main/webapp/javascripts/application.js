@@ -55,12 +55,14 @@ var app = {
         $('#login-name').bind('keydown', function(e) {
             if (e.keyCode == 13) {
                 $('#login-button').click();
+                return false;
             }
         });
         $('#login-button').bind('click', app.login);
         $('#message').bind('keydown', function(e) {
             if (e.shiftKey && e.keyCode == 13) {
                 $('#post-button').click();
+                return false;
             }
         });
         $('#post-button').bind('click', app.post);
@@ -73,6 +75,7 @@ var app = {
         console.log("response = ");
         console.log(response);
         app.update(responseText);
+
     }
 
 }
