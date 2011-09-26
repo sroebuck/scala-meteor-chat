@@ -1,61 +1,57 @@
 # scala-meteor-chat
 
-This project is an attempt to get [Atmosphere](http://atmosphere.java.net/) working with Scala and Jetty.  People are clearly managing to use Atmosphere with Scala but for some reason I’m getting nowhere fast!
+This project is an attempt to get [Atmosphere](http://atmosphere.java.net/) working with Scala and Jetty with as simple an example as possible.  This project is based on the [meteor-chat example](https://github.com/Atmosphere/atmosphere/tree/master/samples/meteor-chat) provided with Atmosphere.
 
-So, this project is based on the [meteor-chat example](https://github.com/Atmosphere/atmosphere/tree/master/samples/meteor-chat) provided with Atmosphere.
+The implementation has now moved to using jQuery instead of Prototype as a JavaScript backend and the latest change is
+to utilise the Atmosphere jQuery plugin for client side websocket interaction and to put in place a simple Scala wrapper
+around the Meteor object to simplify use.
+
+The commit tagged `prototype.js` is a working version using the Prototype.js libraries. I then modified it to use jQuery
+to cut down the dependencies, this working version was tagged `jquery.js`. Now the current version uses the Atmosphere
+jQuery Plugin to enable multiple transport support.
 
 ## Changes to date
 
-So far this example is still completely in Java.  The only changes to date are the creation of an [sbt](https://github.com/harrah/xsbt/wiki) build file `build.sbt` which uses the [xsbt-web-plugin](https://github.com/siasia/xsbt-web-plugin) with it's configuration in the `project/plugins/build.sbt` file.
+* An [sbt](https://github.com/harrah/xsbt/wiki) build file `build.sbt` has been created which uses the [xsbt-web-plugin](https://github.com/siasia/xsbt-web-plugin) with it's configuration in the `project/plugins/build.sbt` file.
 
-This allows the project to be built and run with the command:
+  This allows the project to be built and run with the commands:
 
-    sbt jetty-run
+    sbt
+    > jetty-run
 
-Finally, I have changed line 3 of `application.js`:
+* The Java class `MeteorChat` has been converted to Scala with relatively little change in code style.
+
+* The `application.js` file has been converted from `prototype.js` to `jquery.js`.
+
+* The jQuery and Atmosphere jQuery plugin libraries have been added.
+
+* A simple Scala wrapper around the Meteor class has been added.
+
+* The `application.js` file has been converted to use the Atmosphere jQuery plugin rather than direct hard coded
+jQuery ajax calls.
+
+On top of that I have carried out some changes described below as fixes to problems I encountered.
+
+## Problems along the way
+
+Here are some problems I ran across and found fixes to.
+
+### 404 error in the browser trying to access /atmosphere-meteor-chat/Meteor?0
+
+I was getting browser errors trying to access `/atmosphere-meteor-chat/Meteor?0` and realised that the path in the `web.xml` file did not match the path in the `application.js` file.  So I changed line 3 of `application.js` from:
 
     url: '/atmosphere-meteor-chat/Meteor',
 
 to
 
     url: '/Meteor',
-    
-Which seemed to me to be a mistake - but I could easily be wrong.
 
-## The output
+### NoSuchMethodError for HttpServletRequest.isAsyncStarted using Jetty 7.3.1.v20110307
 
-When I run this, at the present time, I get this log output:
+To start off using Jetty `7.3.1.v20110307` I was getting a no such method error for `javax.servlet.http.HttpServletRequest.isAsyncStarted`.  This error went away when I upgraded to Jetty `8.0.0.M3`.
 
-    > jetty-run
-    [info] jetty-7.3.1.v20110307
-    [info] NO JSP Support for /, did not find org.apache.jasper.servlet.JspServlet
-    [info] started o.e.j.w.WebAppContext{/,file:/Users/sroebuck/Dropbox/Projects/scala-meteor-chat/target/webapp/},/Users/sroebuck/Dropbox/Projects/scala-meteor-chat/target/webapp
-    16:50:53.650 [main] INFO  org.atmosphere.cpr.AtmosphereServlet - initializing atmosphere framework: 0.8-SNAPSHOT
-    16:50:53.658 [main] INFO  org.atmosphere.cpr.AtmosphereServlet - using default broadcaster class: class org.atmosphere.cpr.DefaultBroadcaster
-    16:50:53.680 [main] INFO  org.atmosphere.cpr.AtmosphereServlet - Atmosphere is using comet support: org.atmosphere.container.Servlet30Support running under container: jetty/7.3.1.v20110307 using javax.servlet/3.0
-    16:50:53.680 [main] INFO  org.atmosphere.cpr.AtmosphereServlet - using broadcaster class: org.atmosphere.cpr.DefaultBroadcaster
-    16:50:53.684 [main] INFO  o.a.h.ReflectorServletProcessor - Installing Servlet org.atmosphere.samples.chat.MeteorChat
-    16:50:53.684 [main] INFO  org.atmosphere.cpr.AtmosphereServlet - started atmosphere framework: 0.8-SNAPSHOT
-    [info] Started SelectChannelConnector@0.0.0.0:8080
-    > 16:51:00.394 [qtp302043267-61 - /Meteor?0] DEBUG o.a.cpr.AsynchronousProcessor - (suspend) invoked:
-     HttpServletRequest: [GET /Meteor?0]@1393180668 org.eclipse.jetty.server.Request@530a3ffc
-     HttpServletResponse: HTTP/1.1 200 
+Here was the error stacktrace:
 
-
-    16:51:00.409 [qtp302043267-61 - /Meteor?0] INFO  o.a.commons.util.EventsLogger - onSuspend(): AtmosphereResourceEventImpl{isCancelled=false, isResumedOnTimeout=false, message=null, resource=AtmosphereResourceImpl{, action=org.atmosphere.cpr.AtmosphereServlet$Action@35cd9e66, broadcaster=org.atmosphere.cpr.DefaultBroadcaster, cometSupport=org.atmosphere.container.Servlet30Support@4e5a5622, serializer=null, isInScope=true, useWriter=true, listeners=[org.atmosphere.commons.util.EventsLogger@cccfa5e]}, throwable=null}
-    16:51:00.416 [qtp302043267-61 - /Meteor?0] DEBUG o.a.container.Servlet30Support - Suspending response: HTTP/1.1 200 
-    Content-Type: text/html;charset=ISO-8859-1
-    Set-Cookie: JSESSIONID=1qgkjq7ku165d16wro6xydooql;Path=/
-    Expires: -1
-    Cache-Control: no-store, no-cache, must-revalidate
-    Pragma: no-cache
-    Access-Control-Allow-Origin: *
-
-
-    16:51:00.416 [Atmosphere-AsyncWrite-0] INFO  o.a.commons.util.EventsLogger - onBroadcast(): AtmosphereResourceEventImpl{isCancelled=false, isResumedOnTimeout=false, message=<script type='text/javascript'>
-    window.parent.app.update({ name: "localhost", message: "has suspended a connection from 0:0:0:0:0:0:0:1%0" });
-    </script>
-    , resource=AtmosphereResourceImpl{, action=org.atmosphere.cpr.AtmosphereServlet$Action@35cd9e66, broadcaster=org.atmosphere.cpr.DefaultBroadcaster, cometSupport=org.atmosphere.container.Servlet30Support@4e5a5622, serializer=null, isInScope=true, useWriter=true, listeners=[org.atmosphere.commons.util.EventsLogger@cccfa5e]}, throwable=null}
     [warn] Error for /Meteor
     java.lang.NoSuchMethodError: javax.servlet.http.HttpServletRequest.isAsyncStarted()Z
     	at org.atmosphere.container.Servlet30Support.suspend(Servlet30Support.java:136)
@@ -67,53 +63,65 @@ When I run this, at the present time, I get this log output:
     	at org.eclipse.jetty.websocket.WebSocketServlet.service(WebSocketServlet.java:86)
     	at javax.servlet.http.HttpServlet.service(HttpServlet.java:820)
     	at org.eclipse.jetty.servlet.ServletHolder.handle(ServletHolder.java:534)
-    16:51:38.895 [qtp302043267-58 - /Meteor] DEBUG o.a.cpr.AsynchronousProcessor - (suspend) invoked:
-     HttpServletRequest: [POST /Meteor]@1550100593 org.eclipse.jetty.server.Request@5c64a871
-     HttpServletResponse: HTTP/1.1 200 
 
+However, having read more about the version of Jetty here: <http://java.dzone.com/articles/roadmap-jetty-6-jetty-7-and>
+I would prefer to run under Jetty 7 which seems more aligned to likely deployment at the present time.
 
-    16:51:38.898 [Atmosphere-AsyncWrite-1] INFO  o.a.commons.util.EventsLogger - onBroadcast(): AtmosphereResourceEventImpl{isCancelled=false, isResumedOnTimeout=false, message=<script type='text/javascript'>
-    window.parent.app.update({ name: "System Message from localhost", message: "Stuart has joined." });
-    </script>
-    , resource=AtmosphereResourceImpl{, action=org.atmosphere.cpr.AtmosphereServlet$Action@35cd9e66, broadcaster=org.atmosphere.cpr.DefaultBroadcaster, cometSupport=org.atmosphere.container.Servlet30Support@4e5a5622, serializer=null, isInScope=true, useWriter=true, listeners=[org.atmosphere.commons.util.EventsLogger@cccfa5e]}, throwable=null}
-    16:51:38.909 [Atmosphere-AsyncWrite-1] DEBUG o.atmosphere.cpr.DefaultBroadcaster - onException()
-    org.eclipse.jetty.io.RuntimeIOException: org.eclipse.jetty.io.EofException
-    	at org.eclipse.jetty.io.UncheckedPrintWriter.setError(UncheckedPrintWriter.java:107) ~[na:na]
-    	at org.eclipse.jetty.io.UncheckedPrintWriter.write(UncheckedPrintWriter.java:280) ~[na:na]
-    	at org.eclipse.jetty.io.UncheckedPrintWriter.write(UncheckedPrintWriter.java:295) ~[na:na]
-    	at org.atmosphere.handler.AbstractReflectorAtmosphereHandler.onStateChange(AbstractReflectorAtmosphereHandler.java:112) ~[atmosphere-runtime-0.8-SNAPSHOT.jar:0.8-SNAPSHOT]
-    	at org.atmosphere.cpr.DefaultBroadcaster.broadcast(DefaultBroadcaster.java:558) [atmosphere-runtime-0.8-SNAPSHOT.jar:0.8-SNAPSHOT]
-    	at org.atmosphere.cpr.DefaultBroadcaster.executeAsyncWrite(DefaultBroadcaster.java:504) [atmosphere-runtime-0.8-SNAPSHOT.jar:0.8-SNAPSHOT]
-    	at org.atmosphere.cpr.DefaultBroadcaster$3.run(DefaultBroadcaster.java:523) [atmosphere-runtime-0.8-SNAPSHOT.jar:0.8-SNAPSHOT]
-    	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:441) [na:1.6.0_26]
-    	at java.util.concurrent.FutureTask$Sync.innerRun(FutureTask.java:303) [na:1.6.0_26]
-    	at java.util.concurrent.FutureTask.run(FutureTask.java:138) [na:1.6.0_26]
-    	at java.util.concurrent.ThreadPoolExecutor$Worker.runTask(ThreadPoolExecutor.java:886) [na:1.6.0_26]
-    	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:908) [na:1.6.0_26]
-    	at java.lang.Thread.run(Thread.java:680) [na:1.6.0_26]
-    Caused by: org.eclipse.jetty.io.EofException: null
-    	at org.eclipse.jetty.server.HttpOutput.write(HttpOutput.java:149) ~[na:na]
-    	at org.eclipse.jetty.server.HttpOutput.write(HttpOutput.java:96) ~[na:na]
-    	at java.io.ByteArrayOutputStream.writeTo(ByteArrayOutputStream.java:109) ~[na:1.6.0_26]
-    	at org.eclipse.jetty.server.HttpWriter.write(HttpWriter.java:283) ~[na:na]
-    	at org.eclipse.jetty.server.HttpWriter.write(HttpWriter.java:107) ~[na:na]
-    	at org.eclipse.jetty.io.UncheckedPrintWriter.write(UncheckedPrintWriter.java:271) ~[na:na]
-    	... 11 common frames omitted
-    16:51:38.910 [Atmosphere-AsyncWrite-1] INFO  o.a.commons.util.EventsLogger - onDisconnect(): AtmosphereResourceEventImpl{isCancelled=true, isResumedOnTimeout=false, message=null, resource=AtmosphereResourceImpl{, action=org.atmosphere.cpr.AtmosphereServlet$Action@35cd9e66, broadcaster=org.atmosphere.cpr.DefaultBroadcaster, cometSupport=org.atmosphere.container.Servlet30Support@4e5a5622, serializer=null, isInScope=true, useWriter=true, listeners=[org.atmosphere.commons.util.EventsLogger@cccfa5e]}, throwable=org.eclipse.jetty.io.RuntimeIOException: org.eclipse.jetty.io.EofException}
-    Exception in thread "Atmosphere-AsyncWrite-2" java.lang.IllegalStateException: No SessionManager
-    	at org.eclipse.jetty.server.Request.getSession(Request.java:1107)
-    	at org.eclipse.jetty.server.Request.getSession(Request.java:1097)
-    	at org.atmosphere.container.Servlet30Support.action(Servlet30Support.java:168)
-    	at org.atmosphere.container.Servlet30Support.action(Servlet30Support.java:63)
-    	at org.atmosphere.cpr.AtmosphereResourceImpl.resume(AtmosphereResourceImpl.java:179)
-    	at org.atmosphere.cpr.DefaultBroadcaster$4.run(DefaultBroadcaster.java:589)
-    	at java.util.concurrent.ThreadPoolExecutor$Worker.runTask(ThreadPoolExecutor.java:886)
-    	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:908)
-    	at java.lang.Thread.run(Thread.java:680)
-    16:51:44.577 [qtp302043267-61 - /Meteor] DEBUG o.a.cpr.AsynchronousProcessor - (suspend) invoked:
-     HttpServletRequest: [POST /Meteor]@1550100593 org.eclipse.jetty.server.Request@5c64a871
-     HttpServletResponse: HTTP/1.1 200 
+I tried what appeared to be the latest official release: `7.5.0.v20110901` but this failed with a different error.
 
-## Help much appreciated
+I tried the latest official release from one of the maven indexes: `7.4.5.v20110725` but this failed with the same `isAsyncStarted` error which I now understand to be due to the lack of Servlet 3.0 support.  So I tried this save
+version with Atmosphere `0.7.2`.  This still generated the `isAsyncStarted` error.  However, given that this was trying to use the Servlet 3.0 API I noticed that I was including:
 
-If you can help me know where I'm going wrong then please tweet me: @stuey.
+    "org.apache.geronimo.specs" % "geronimo-servlet_3.0_spec" % "1.0",
+
+and changed this back to:
+
+    "org.apache.geronimo.specs" % "geronimo-servlet_2.4_spec" % "1.0",
+
+and it worked.  Then I noticed that the `scalatra` codebase chose to include:
+
+    "javax.servlet" % "javax.servlet-api" % "3.0.1" % "provided"
+
+instead, so I tried that and, although it is the Servlet 3.x API it also works!
+
+I also tried changing the version of Atmosphere back to `0.7.2` and found that this worked fine again.  So my conslusion
+here is that it is much better to include: `javax.servlet-api 3.0.1` than `geronimo-servlet_3.0_spec 1.0`.    
+
+### Delayed output on Webkit browsers
+
+I encountered delayed output on Webkit based browsers which seems to have been resolved by explicitly setting the
+content type of the response to:
+
+    Content-Type: text/plain;charset=UTF-8
+
+or
+
+    Content-Type: text/html;charset=UTF-8
+
+Missing the content type appears to result in a delay in display on the client if the client is running Webkit. However,
+in another example this wasn't enough and further investigation found this issue raised in detail here: <http://code.google.com/p/chromium/issues/detail?id=2016>.
+
+The first workaround is to pad the output with 256 characters of output before sending anything that matters.  This
+apparently works, but doesn't seem very elegant so say the least!  Atmosphere does this automatically in some situations.
+
+The next workaround (which I haven't tried, but is listed in the explanation above) is to set:
+
+    Content-Type: application/octet-stream
+    Transfer-Encoding: chunked
+
+However, setting the transfer encoding to 'chunked' doesn't appear to be so easy with the Servlet API.  Apparently if
+the output buffering is switched off and the size is not sent then it should default to `chunked` but I haven't been
+able to find a way of making that work yet!
+
+### Websocket support not working in Firefox 8 and Opera 11
+
+This stackoverflow question answers the question of which browsers support WebSockets: <http://stackoverflow.com/questions/1253683/websocket-for-html5>.
+
+One of the links: <http://techdows.com/2010/12/turn-on-websockets-in-firefox-4.html> explains how to enable WebSocket
+support in Firefox releases that have it implemented but disabled.
+
+However, to add to the confusion the websocket object has been renamed in the later versions of Firefox so you use
+`MozWebSocket` rather than `WebSocket`
+
+I therefore modified the atmosphere.jquery.js library to check for either `WebSocket` or `MozWebSocket` before falling
+back to Comet, and to use `MozWebSocket` rather than `WebSocket` to create the socket if the latter was not available.
