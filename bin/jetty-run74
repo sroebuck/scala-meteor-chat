@@ -1,0 +1,9 @@
+#! /bin/bash
+
+# Package the webapp directory and run it as a standalone jetty server...
+sbt prepare-webapp && \
+java ${JAVA_OPTS} \
+  -Drun.mode=development -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=256m -Xmx512M -Xss2M \
+  -jar ~/local/jetty-runner/jetty-runner-7.4.5.v20110725.jar \
+  --jar ~/local/jetty-runner/jetty-websocket-7.4.5.v20110725.jar \
+    target/webapp

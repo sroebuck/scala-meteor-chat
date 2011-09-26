@@ -41,7 +41,7 @@ body, textarea, input {
 #display {
   border: 1px solid #5c8098;
   width: 740px;
-  height: 200px;
+  height: 400px;
   margin-bottom: 10px;
   overflow-y: scroll;
 }

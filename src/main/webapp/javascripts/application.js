@@ -1,159 +1,90 @@
 var count = 0;
 var app = {
-
-
+    url: '/Meteor',
+    initialize: function() {
+        $('login-name').focus();
+        app.listen();
+    },
+    listen: function() {
+        $('comet-frame').src = app.url + '?' + count;
+        count ++;
+    },
     login: function() {
-        var name = $('#login-name').val();
+        var name = $F('login-name');
         if(! name.length > 0) {
-            $('#system-message').css('color','red');
-            $('#login-name').focus();
+            $('system-message').style.color = 'red';
+            $('login-name').focus();
             return;
         }
-        $('#system-message').css('color','#2d2b3d');
-        $('#system-message').text(name + ':');
+        $('system-message').style.color = '#2d2b3d';
+        $('system-message').innerHTML = name + ':';
 
-        $('#login-button').prop('disabled', true);
-        $('#login-form').css('display', 'none');
-        $('#message-form').css('display', '');
+        $('login-button').disabled = true;
+        $('login-form').style.display = 'none';
+        $('message-form').style.display = '';
 
-        var query = 'action=login' + '&name=' + encodeURI($('#login-name').val());
-        atmoWrapper.websocketSend(this.url, query, function(response) {
-            console.log("login callback called");
-            $('#message').focus();
+        var query =
+        'action=login' +
+        '&name=' + encodeURI($F('login-name'));
+        new Ajax.Request(app.url, {
+            postBody: query,
+            onSuccess: function() {
+                $('message').focus();
+            }
         });
     },
-
     post: function() {
-        var message = $('#message').val();
+        var message = $F('message');
         if(!message > 0) {
             return;
         }
-        $('#message').prop('disabled', true);
-        $('#post-button').prop('disabled', true);
+        $('message').disabled = true;
+        $('post-button').disabled = true;
 
-        var query = 'action=post' + '&name=' + encodeURI($('#login-name').val()) + '&message=' + encodeURI(message);
-        atmoWrapper.websocketSend(this.url, query, function(response) {
-            console.log("post callback called");
-            $('#message').prop('disabled', false);
-            $('#post-button').prop('disabled', false);
-            $('#message').focus();
-            $('#message').val('');
+        var query =
+        'action=post' +
+        '&name=' + encodeURI($F('login-name')) +
+        '&message=' + encodeURI(message);
+        new Ajax.Request(app.url, {
+            postBody: query,
+            onComplete: function() {
+                $('message').disabled = false;
+                $('post-button').disabled = false;
+                $('message').focus();
+                $('message').value = '';
+            }
         });
     },
-
     update: function(data) {
-        var p = $('<p></p>');
-        p.append(data);
+        var p = document.createElement('p');
+        p.innerHTML = data.name + ':<br/>' + data.message;
       
-        $('#display').append(p);
+        $('display').appendChild(p);
 
-        $("#display").prop('scrollTop', $('#display').prop('scrollHeight'));
-    },
-
-    setupPageInteraction: function(url) {
-        this.url = url
-        $('#login-name').bind('keydown', function(e) {
-            if (e.keyCode == 13) {
-                $('#login-button').click();
-                return false;
+        new Fx.Scroll('display').down();
+    }
+};
+var rules = {
+    '#login-name': function(elem) {
+        Event.observe(elem, 'keydown', function(e) {
+            if(e.keyCode == 13) {
+                $('login-button').focus();
             }
         });
-        $('#login-button').bind('click', app.login);
-        $('#message').bind('keydown', function(e) {
-            if (e.shiftKey && e.keyCode == 13) {
-                $('#post-button').click();
-                return false;
+    },
+    '#login-button': function(elem) {
+        elem.onclick = app.login;
+    },
+    '#message': function(elem) {
+        Event.observe(elem, 'keydown', function(e) {
+            if(e.shiftKey && e.keyCode == 13) {
+                $('post-button').focus();
             }
         });
-        $('#post-button').bind('click', app.post);
-        $('#login-name').focus();
     },
-
-    websocketCallback: function(response) {
-        console.log("websocketCallback state = " + response.state);
-        var responseText = response.responseBody;
-        console.log("response = ");
-        console.log(response);
-        app.update(responseText);
-
+    '#post-button': function(elem) {
+        elem.onclick = app.post;
     }
-
-}
-
-// This is a wrapper for the atmosphere jQuery Plugin.  The principle reason for writing this wrapper is in order to
-// document the interface so that I've got more of a clue about what is going on.
-var atmoWrapper = {
-
-    // Establish a websocket connection with the host server.  Negotiate the protocol, falling back to an alternative
-    // like comet if the client or server does not support websockets.
-    //
-    // `url` is the URL used to establish a websocket on the server.  The first stage of establishing that
-    //    connection is sending a GET to that URL.
-    //
-    // `callback` is a function that will be called whenever a websocket message is sent to this client.  The function
-    //    should take one parameter which is the `response` object.
-    //
-    // `transport` is the first kind of transport to attempt.  Possible values include "websocket", "long-polling" and
-    //   "streaming".
-
-    websocketConnect: function(url, callback, transport) {
-        $.atmosphere.subscribe(
-            url,
-            callback,
-            $.atmosphere.request = {
-                'logLevel': 'debug',
-                'transport': transport
-            } )
-//            $.atmosphere.request = { transport: 'websocket' } )
-    },
-
-    // Send a message over the established websocket connection or on whatever protocol has been fallen back to.
-    // At present this is configured to encode the data as if it was a web form, but it appears as though this
-    // configuration works for comet but not for websocket.
-    //
-    // `url` is the URL used to establish a websocket on the server.  The first stage of establishing that
-    //    connection is sending a GET to that URL.
-    //
-    // `data` is the data to send over the connection.
-    //
-    // `callback` is a function that will be called whenever a websocket message is sent to this client.  The function
-    //   should take one parameter which is the `response` object.
-
-    websocketSend: function(url, data, callback) {
-        console.log("websocketSend -> about to send: " + data);
-//        console.log("Push function = ");
-//        console.log($.atmosphere.response.push);
-//        var ws = $.atmosphere.websocket;
-//        console.log("Websocket = ");
-//        console.log(ws);
-
-        // The syntax for the push function appeared to be as commented out below from examples, but looking at the
-        // code it appears to just take a single argument and obtain the data from the global variable:
-        // `$.atmosphere.request.data`.  So I've changed the call to the one below that is clear and explicit in
-        // what it's doing.
-
-//        $.atmosphere.response.push(
-//            url,
-//            callback,
-//            $.atmosphere.request = {
-//                'data': data,
-//                'contentType': 'application/x-www-form-urlencoded'
-//            })
-
-        $.atmosphere.request.method = 'POST';
-        $.atmosphere.request.contentType = 'application/x-www-form-urlencoded';
-        $.atmosphere.request.data = data;
-        $.atmosphere.response.push(url);
-
-        callback(null);
-    }
-
-}
-
-
-$(function() {
-    var METEOR_URL = '/Meteor';
-
-    atmoWrapper.websocketConnect(METEOR_URL, app.websocketCallback, "websocket");
-    app.setupPageInteraction(METEOR_URL);
-});
+};
+Behaviour.addLoadEvent(app.initialize);
+Behaviour.register(rules);
