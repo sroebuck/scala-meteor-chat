@@ -85,6 +85,7 @@ class ScalaMeteorChat extends HttpServlet with AtmosphereResourceEventListener w
         myMeteor.broadcast("%s\n  %s".format(name,message))
 
       case _ =>
+        logger.warn("Unmatching action!")
         response.setStatus(422)
     }
   }

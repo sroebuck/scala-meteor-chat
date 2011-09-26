@@ -2,6 +2,7 @@
 .history
 .idea/
 .idea_modules/
+/bin/
 /target/
 /project/boot/
 /project/plugins/project/
