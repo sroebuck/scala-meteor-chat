@@ -15,56 +15,32 @@ import net.liftweb.json.JsonParser
  * @author TAKAI Naoto (Orginial author for the Comet based Chat).
  * @author Stuart Roebuck (conversion to Scala).
  */
-class ScalaMeteorChat extends HttpServlet with AtmosphereResourceEventListener with Logging {
+class ScalaMeteorChat extends HttpServlet with Logging {
 
   /**
-   * Create a {@link Meteor} and use it to suspend the response.
-   * @param req An {@link HttpServletRequest}
-   * @param res An {@link HttpServletResponse}
+   * I believe that this is only called at the beginning when the client tries to establish a connection.  For this
+   * reason this code simply creates a Meteor if there isn't one already associated with the Session.
    */
   override def doGet(request: HttpServletRequest, response: HttpServletResponse) {
     logger.info("-> doGet")
-    MyMeteor(request, listeners = Seq(this, new EventsLogger))
+    MyMeteor(request, listeners = Seq(MyListener, new EventsLogger))
   }
 
   /**
-   * Receive a posted message.  If there is already a Meteor then use it, otherwise create one.
-   *
-   * @param req An {@link HttpServletRequest}
-   * @param res An {@link HttpServletResponse}
+   * I believe that this method is called either directly as an HTTP POST request or as a result of a message being
+   * sent through an Atmosphere based connection.  In either case the code handles the situation the same, however
+   * at present there is an issue that the jquery.atmosphere.js plugin doesn't encode the messages in a web form
+   * format when they are transmitted by websocket so they are not displayed properly.
    */
   override def doPost(request: HttpServletRequest, response: HttpServletResponse) {
     logger.info("-> doPost")
-    val myMeteor = MyMeteor(request, listeners = Seq(this, new EventsLogger))
+    val myMeteor = MyMeteor(request, listeners = Seq(MyListener, new EventsLogger))
     onReceiptOfBroadcast(myMeteor, request, response)
   }
 
-  def onSuspend(event: AtmosphereResourceEvent[HttpServletRequest, HttpServletResponse]) {
-    logger.info("-> onSuspend")
-  }
-
-  def onResume(event: AtmosphereResourceEvent[HttpServletRequest, HttpServletResponse]) {
-    logger.info("-> onResume")
-  }
-
-  def onDisconnect(event: AtmosphereResourceEvent[HttpServletRequest, HttpServletResponse]) {
-    logger.info("-> onDisconnect")
-  }
-
   /**
-   * This appears to be called when Meteor is used to broadcast a message.  It appears to be a message going out, not
-   * a message coming in.
-   */
-  def onBroadcast(event: AtmosphereResourceEvent[HttpServletRequest, HttpServletResponse]) {
-    logger.info("-> onBroadcast - %s".format(event.getMessage))
-  }
-
-  def onThrowable(event: AtmosphereResourceEvent[HttpServletRequest, HttpServletResponse]) {
-    logger.info("-> onThrowable")
-  }
-
-  /**
-   * Handle a message received that appears to be a "Post" but may come from a Meteor.
+   * This completes the handling of the message from the client.  It has been separated into another method as it made
+   * it easier to switch things around a bit when trying to debug what is or isn't happening.
    */
   private def onReceiptOfBroadcast(myMeteor: MyMeteor, request: HttpServletRequest, response: HttpServletResponse) {
     logger.info("==> onMeteorBroadcast")
@@ -73,7 +49,6 @@ class ScalaMeteorChat extends HttpServlet with AtmosphereResourceEventListener w
     val name: String = request.getParameterValues("name")(0)
     logger.info("action: %s, name: %s".format(action, name))
 //    logger.info("request.getParts: %s".format(request.getParts.toList))
-
 
     action match {
       case "login" =>
@@ -92,15 +67,34 @@ class ScalaMeteorChat extends HttpServlet with AtmosphereResourceEventListener w
 
 }
 
+object MyListener extends AtmosphereResourceEventListener with Logging {
+
+  def onSuspend(event: AtmosphereResourceEvent[HttpServletRequest, HttpServletResponse]) {
+    logger.info("-> onSuspend")
+  }
+
+  def onResume(event: AtmosphereResourceEvent[HttpServletRequest, HttpServletResponse]) {
+    logger.info("-> onResume")
+  }
+
+  def onDisconnect(event: AtmosphereResourceEvent[HttpServletRequest, HttpServletResponse]) {
+    logger.info("-> onDisconnect")
+  }
+
+  def onBroadcast(event: AtmosphereResourceEvent[HttpServletRequest, HttpServletResponse]) {
+    logger.info("-> onBroadcast - %s".format(event.getMessage))
+  }
+
+  def onThrowable(event: AtmosphereResourceEvent[HttpServletRequest, HttpServletResponse]) {
+    logger.info("-> onThrowable")
+  }
+
+}
 
 
 /**
- * Simple Scala wrapper for Atmosphere.Meteor class.
- *
- * @param request the incoming HttpServletRequest from which to establish a long-polling transport.
- * @param filters BroadcastFilters that filter any data sent to the client.
- * @param listeners a sequence of `AtmosphereResourceEventListener` to receive events as they happen.  If this
- *    parameter is not supplied then the default `EventsLogger` listener is added which logs events to the logger.
+ * Simple Scala wrapper for Atmosphere.Meteor class.  This doesn't do a great deal but provides me with a way of
+ * locally documenting the Atmosphere package whilst I'm trying to get things to work.
  */
 case class MyMeteor(meteor: Meteor) {
 
@@ -134,21 +128,31 @@ object MyMeteor extends Logging {
 
   /**
    * Create a Meteor object or return one that has already been cached for the particular HttpServletRequest.
+   *
+   * @param request the incoming HttpServletRequest from which to establish a long-polling transport.
+   * @param filters BroadcastFilters that filter any data sent to the client.
+   * @param listeners a sequence of `AtmosphereResourceEventListener` to receive events as they happen.  If this
+   *    parameter is not supplied then the default `EventsLogger` listener is added which logs events to the logger.
    */
   def apply(request: HttpServletRequest,
             filters: Set[BroadcastFilter] = Set(),
             listeners: Seq[AtmosphereResourceEventListener] = Seq(new EventsLogger)): MyMeteor = {
     val session = request.getSession
     Option(session.getAttribute("meteor")) match {
-      case Some(mm: MyMeteor) => mm
+      case Some(mm: MyMeteor) =>
+        // There is an existing MyMeteor object stored in the session, so just return it...
+        mm
       case None =>
+        // There is no existing MyMeteor object stored in the session, so create one and store it for future use...
         logger.warn("Building a new Meteor!")
         val m = Meteor.build(request, filters.toList, null)
         listeners.foreach(m.addListener(_))
         val mm = MyMeteor(m).suspend()
         session.setAttribute("meteor", mm)
         mm
-      case _ => throw new RuntimeException("This shouldn't happen!")
+      case _ =>
+        // Another unanticipated event has occurred so throw an exception...
+        throw new RuntimeException("This shouldn't happen!")
     }
   }
 

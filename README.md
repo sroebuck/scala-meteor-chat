@@ -10,11 +10,14 @@ The commit tagged `prototype.js` is a working version using the Prototype.js lib
 to cut down the dependencies, this working version was tagged `jquery.js`. Now the current version uses the Atmosphere
 jQuery Plugin to enable multiple transport support.
 
+This is a work in progress to try and make things work and share the code.  This is not an exemplar of what you should
+do!  The current version *fails* to establish and maintain websocket connections with Safari, Chrome and many versions of Firefox.
+
 ## Changes to date
 
 * An [sbt](https://github.com/harrah/xsbt/wiki) build file `build.sbt` has been created which uses the [xsbt-web-plugin](https://github.com/siasia/xsbt-web-plugin) with it's configuration in the `project/plugins/build.sbt` file.
 
-  This allows the project to be built and run with the commands:
+This requires sbt 0.11 to be installed and then allows the project to be built and run with the commands:
 
     sbt
     > jetty-run
