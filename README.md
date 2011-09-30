@@ -136,6 +136,13 @@ web.xml configuration:
         <param-value>org.atmosphere.cpr.HttpServletRequestWebSocketProcessor</param-value>
     </init-param>
 
+### ngrep debugging didn't seem to work
+
+Latterly I tried to debug what was going on using `ngrep` which I hadn't used before, but couldn't get it to see the communications.  It turns out that it made a big difference to connect to my local server on address `http://127.0.0.1:8080` rather than `http://localhost:8080`.  Having found that out, the following command line was
+very helpful for tracing what went on:
+
+        sudo ngrep -d lo0 -q -W byline port 8080
+
 ### Atmosphere's websocket Meteor implementation doesn't handle www form encoding of parameters
 
 I found that when you sent parameters www form encoded they were received and interpreted as request parameters by
