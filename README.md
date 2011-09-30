@@ -1,39 +1,22 @@
 # scala-meteor-chat
 
-This project is an attempt to get [Atmosphere](http://atmosphere.java.net/) working with Scala and Jetty with as simple an example as possible.  This project is based on the [meteor-chat example](https://github.com/Atmosphere/atmosphere/tree/master/samples/meteor-chat) provided with Atmosphere.
+This project is now an example of [Atmosphere](http://atmosphere.java.net/) working with Scala in a relatively simple
+way. This project is based on the [meteor-chat example](https://github.com/Atmosphere/atmosphere/tree/master/samples/meteor-chat) provided with Atmosphere.
 
-The implementation has now moved to using jQuery instead of Prototype as a JavaScript backend and the latest change is
-to utilise the Atmosphere jQuery plugin for client side websocket interaction and to put in place a simple Scala wrapper
-around the Meteor object to simplify use.
+Unlike the project this was based on, this project uses jQuery rather than Prototype to match the use of the atmosphere
+jQuery plugin.
 
-The commit tagged `prototype.js` is a working version using the Prototype.js libraries. I then modified it to use jQuery
-to cut down the dependencies, this working version was tagged `jquery.js`. Now the current version uses the Atmosphere
-jQuery Plugin to enable multiple transport support.
+Along the way I had quite a few simple but frustrating problems.  These are documented a little below to help prevent
+anyone else having them!
 
-This is a work in progress to try and make things work and share the code.  This is not an exemplar of what you should
-do!  The current version *fails* to establish and maintain websocket connections with Safari, Chrome and many versions of Firefox.
+## Running the example
 
-## Changes to date
+* Install [sbt](https://github.com/harrah/xsbt/wiki) 0.11.
 
-* An [sbt](https://github.com/harrah/xsbt/wiki) build file `build.sbt` has been created which uses the [xsbt-web-plugin](https://github.com/siasia/xsbt-web-plugin) with it's configuration in the `project/plugins/build.sbt` file.
-
-This requires sbt 0.11 to be installed and then allows the project to be built and run with the commands:
+Built and run with the commands:
 
     sbt
     > jetty-run
-
-* The Java class `MeteorChat` has been converted to Scala with relatively little change in code style.
-
-* The `application.js` file has been converted from `prototype.js` to `jquery.js`.
-
-* The jQuery and Atmosphere jQuery plugin libraries have been added.
-
-* A simple Scala wrapper around the Meteor class has been added.
-
-* The `application.js` file has been converted to use the Atmosphere jQuery plugin rather than direct hard coded
-jQuery ajax calls.
-
-On top of that I have carried out some changes described below as fixes to problems I encountered.
 
 ## Problems along the way
 
@@ -48,6 +31,8 @@ I was getting browser errors trying to access `/atmosphere-meteor-chat/Meteor?0`
 to
 
     url: '/Meteor',
+    
+This was just because I was serving it as a stand-alone site which is different from the original.
 
 ### NoSuchMethodError for HttpServletRequest.isAsyncStarted using Jetty 7.3.1.v20110307
 
@@ -87,8 +72,11 @@ and it worked.  Then I noticed that the `scalatra` codebase chose to include:
 
 instead, so I tried that and, although it is the Servlet 3.x API it also works!
 
-I also tried changing the version of Atmosphere back to `0.7.2` and found that this worked fine again.  So my conslusion
-here is that it is much better to include: `javax.servlet-api 3.0.1` than `geronimo-servlet_3.0_spec 1.0`.    
+I also tried changing the version of Atmosphere back to `0.7.2` and found that this worked fine again.
+
+Eventually I discovered that if I set the jetty libraries as `"provided,jetty"` then they were included during the
+compilation and supplied for actual web serving and this seemed to solve everything removing any need for either
+`javax.servlet-api` or `geronimo-servlet_X.X_spec`.
 
 ### Delayed output on Webkit browsers
 
@@ -116,6 +104,9 @@ However, setting the transfer encoding to 'chunked' doesn't appear to be so easy
 the output buffering is switched off and the size is not sent then it should default to `chunked` but I haven't been
 able to find a way of making that work yet!
 
+The calls to Atmosphere now seem to successfully including this padding of characters so I'm not entirely sure where
+I went wrong before.
+
 ### Websocket support not working in Firefox 8 and Opera 11
 
 This stackoverflow question answers the question of which browsers support WebSockets: <http://stackoverflow.com/questions/1253683/websocket-for-html5>.
@@ -128,3 +119,28 @@ However, to add to the confusion the websocket object has been renamed in the la
 
 I therefore modified the atmosphere.jquery.js library to check for either `WebSocket` or `MozWebSocket` before falling
 back to Comet, and to use `MozWebSocket` rather than `WebSocket` to create the socket if the latter was not available.
+
+This has now been incorporated into the latest release of the `jquery.atmosphere.js` plugin.
+
+### Websockets don't establish or establish and immediately fail on Safari and Chrome
+
+This problem held me back for ages and was finally resolved by the simple addition of these two parameters to the
+web.xml configuration:
+
+    <init-param>
+        <param-name>org.atmosphere.useWebSocket</param-name>
+        <param-value>true</param-value>
+    </init-param>
+    <init-param>
+        <param-name>org.atmosphere.cpr.WebSocketProcessor</param-name>
+        <param-value>org.atmosphere.cpr.HttpServletRequestWebSocketProcessor</param-value>
+    </init-param>
+
+### Atmosphere's websocket Meteor implementation doesn't handle www form encoding of parameters
+
+I found that when you sent parameters www form encoded they were received and interpreted as request parameters by
+the web server except when the transport was websocket.  To work around this I JSON encoded all the data for all
+transmissions.
+ 
+
+

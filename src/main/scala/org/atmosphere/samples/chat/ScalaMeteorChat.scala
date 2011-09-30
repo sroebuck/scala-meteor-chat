@@ -6,6 +6,7 @@ import org.atmosphere.commons.util.EventsLogger
 import org.atmosphere.cpr._
 import scala.collection.JavaConversions._
 import net.liftweb.json.JsonParser
+import io.Source
 
 /**
  * Simple Servlet that implement the logic to build a Chat application using
@@ -23,7 +24,7 @@ class ScalaMeteorChat extends HttpServlet with Logging {
    */
   override def doGet(request: HttpServletRequest, response: HttpServletResponse) {
     logger.info("-> doGet")
-    MyMeteor(request, listeners = Seq(MyListener, new EventsLogger))
+    MyMeteor(request)
   }
 
   /**
@@ -34,21 +35,19 @@ class ScalaMeteorChat extends HttpServlet with Logging {
    */
   override def doPost(request: HttpServletRequest, response: HttpServletResponse) {
     logger.info("-> doPost")
-    val myMeteor = MyMeteor(request, listeners = Seq(MyListener, new EventsLogger))
-    onReceiptOfBroadcast(myMeteor, request, response)
-  }
-
-  /**
-   * This completes the handling of the message from the client.  It has been separated into another method as it made
-   * it easier to switch things around a bit when trying to debug what is or isn't happening.
-   */
-  private def onReceiptOfBroadcast(myMeteor: MyMeteor, request: HttpServletRequest, response: HttpServletResponse) {
-    logger.info("==> onMeteorBroadcast")
+    val myMeteor = MyMeteor(request)
     response.setCharacterEncoding("UTF-8")
-    val action: String = request.getParameterValues("action")(0)
-    val name: String = request.getParameterValues("name")(0)
+    
+    val body = Source.fromInputStream(request.getInputStream).mkString
+    logger.info("body: %s".format(body))
+    val parameters: Map[String,String] = JsonParser.parse(body).values match {
+      case x: Map[String,String] => x
+      case _ => Map()
+    }
+    logger.info("parameters: %s".format(parameters))
+    val action = parameters.get("action").getOrElse("")
+    val name = parameters.get("name").getOrElse("")
     logger.info("action: %s, name: %s".format(action, name))
-//    logger.info("request.getParts: %s".format(request.getParts.toList))
 
     action match {
       case "login" =>
@@ -56,37 +55,13 @@ class ScalaMeteorChat extends HttpServlet with Logging {
         myMeteor.broadcast("System Message from %s:  %s has joined".format(request.getServerName, name))
 
       case "post" =>
-        val message: String = request.getParameterValues("message")(0)
-        myMeteor.broadcast("%s\n  %s".format(name,message))
+        val message = parameters.get("message").getOrElse("")
+        myMeteor.broadcast("%s:<br>%s<br>".format(name,message.split("\n").mkString("<br>")))
 
       case _ =>
         logger.warn("Unmatching action!")
         response.setStatus(422)
     }
-  }
-
-}
-
-object MyListener extends AtmosphereResourceEventListener with Logging {
-
-  def onSuspend(event: AtmosphereResourceEvent[HttpServletRequest, HttpServletResponse]) {
-    logger.info("-> onSuspend")
-  }
-
-  def onResume(event: AtmosphereResourceEvent[HttpServletRequest, HttpServletResponse]) {
-    logger.info("-> onResume")
-  }
-
-  def onDisconnect(event: AtmosphereResourceEvent[HttpServletRequest, HttpServletResponse]) {
-    logger.info("-> onDisconnect")
-  }
-
-  def onBroadcast(event: AtmosphereResourceEvent[HttpServletRequest, HttpServletResponse]) {
-    logger.info("-> onBroadcast - %s".format(event.getMessage))
-  }
-
-  def onThrowable(event: AtmosphereResourceEvent[HttpServletRequest, HttpServletResponse]) {
-    logger.info("-> onThrowable")
   }
 
 }

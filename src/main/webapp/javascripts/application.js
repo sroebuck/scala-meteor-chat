@@ -1,6 +1,6 @@
 var count = 0;
 var app = {
-
+    url: "",
 
     login: function() {
         var name = $('#login-name').val();
@@ -16,8 +16,11 @@ var app = {
         $('#login-form').css('display', 'none');
         $('#message-form').css('display', '');
 
-        var query = 'action=login' + '&name=' + encodeURI($('#login-name').val());
-        atmoWrapper.websocketSend(this.url, query, function(response) {
+        var query = {
+            action: 'login',
+            name: $('#login-name').val()
+        };
+        atmoWrapper.websocketSend(app.url, query, function(response) {
             console.log("login callback called");
             $('#message').focus();
         });
@@ -31,8 +34,12 @@ var app = {
         $('#message').prop('disabled', true);
         $('#post-button').prop('disabled', true);
 
-        var query = 'action=post' + '&name=' + encodeURI($('#login-name').val()) + '&message=' + encodeURI(message);
-        atmoWrapper.websocketSend(this.url, query, function(response) {
+        var query = {
+            action: 'post',
+            name: $('#login-name').val(),
+            message: message
+        };
+        atmoWrapper.websocketSend(app.url, query, function(response) {
             console.log("post callback called");
             $('#message').prop('disabled', false);
             $('#post-button').prop('disabled', false);
@@ -51,7 +58,7 @@ var app = {
     },
 
     setupPageInteraction: function(url) {
-        this.url = url
+        app.url = url
         $('#login-name').bind('keydown', function(e) {
             if (e.keyCode == 13) {
                 $('#login-button').click();
@@ -97,14 +104,10 @@ var atmoWrapper = {
     //   "streaming".
 
     websocketConnect: function(url, callback, transport) {
-        $.atmosphere.subscribe(
-            url,
-            callback,
-            $.atmosphere.request = {
-                'logLevel': 'debug',
-                'transport': transport
-            } )
-//            $.atmosphere.request = { transport: 'websocket' } )
+        $.atmosphere.request.logLevel = 'debug';
+        $.atmosphere.request.transport = transport;
+
+        $.atmosphere.subscribe(url, callback, $.atmosphere.request);
     },
 
     // Send a message over the established websocket connection or on whatever protocol has been fallen back to.
@@ -121,28 +124,11 @@ var atmoWrapper = {
 
     websocketSend: function(url, data, callback) {
         console.log("websocketSend -> about to send: " + data);
-//        console.log("Push function = ");
-//        console.log($.atmosphere.response.push);
-//        var ws = $.atmosphere.websocket;
-//        console.log("Websocket = ");
-//        console.log(ws);
-
-        // The syntax for the push function appeared to be as commented out below from examples, but looking at the
-        // code it appears to just take a single argument and obtain the data from the global variable:
-        // `$.atmosphere.request.data`.  So I've changed the call to the one below that is clear and explicit in
-        // what it's doing.
-
-//        $.atmosphere.response.push(
-//            url,
-//            callback,
-//            $.atmosphere.request = {
-//                'data': data,
-//                'contentType': 'application/x-www-form-urlencoded'
-//            })
 
         $.atmosphere.request.method = 'POST';
-        $.atmosphere.request.contentType = 'application/x-www-form-urlencoded';
-        $.atmosphere.request.data = data;
+        $.atmosphere.request.contentType = 'application/json';
+        $.atmosphere.request.data = JSON.stringify(data);
+
         $.atmosphere.response.push(url);
 
         callback(null);
@@ -154,6 +140,6 @@ var atmoWrapper = {
 $(function() {
     var METEOR_URL = '/Meteor';
 
-    atmoWrapper.websocketConnect(METEOR_URL, app.websocketCallback, "websocket");
     app.setupPageInteraction(METEOR_URL);
+    atmoWrapper.websocketConnect(METEOR_URL, app.websocketCallback, "websocket");
 });

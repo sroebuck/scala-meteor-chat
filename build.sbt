@@ -14,10 +14,10 @@ traceLevel := 10
 
 libraryDependencies ++= {
 //  val jettyVersion = "7.2.2.v20101205"
-    val jettyVersion = "7.4.5.v20110725"
+//    val jettyVersion = "7.4.5.v20110725"
 //    val jettyVersion = "7.5.1.v20110908"
 //    val jettyVersion = "8.0.0.M3"
-//    val jettyVersion = "8.0.1.v20110908"
+    val jettyVersion = "8.0.1.v20110908"
 //    val atmosphereVersion = "0.7.2"
     val atmosphereVersion = "0.8-SNAPSHOT"
     Seq(
@@ -48,7 +48,7 @@ resolvers ++= Seq(
 )
 
 // disable updating dynamic revisions (including -SNAPSHOT versions)
-offline := false
+offline := true
 
 // Adds `jetty-run` command to sbt etc.
 seq(webSettings :_*)
