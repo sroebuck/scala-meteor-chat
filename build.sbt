@@ -19,13 +19,8 @@ libraryDependencies ++= {
 //    val jettyVersion = "8.0.0.M3"
     val jettyVersion = "8.0.1.v20110908"
 //    val atmosphereVersion = "0.7.2"
-    val atmosphereVersion = "0.8-SNAPSHOT"
+    val atmosphereVersion = "0.8.0-RC2-SNAPSHOT"
     Seq(
-//        "javax.servlet" % "javax.servlet-api" % "3.0.1" % "provided",
-//        "org.apache.geronimo.specs" % "geronimo-servlet_2.4_spec" % "1.1.1" % "provided",
-//        "org.apache.geronimo.specs" % "geronimo-servlet_2.5_spec" % "1.2" % "provided",
-//        "org.apache.geronimo.specs" % "geronimo-servlet_3.0_spec" % "1.0" % "provided",
-//        "javax.servlet.jsp" % "javax.servlet.jsp-api" % "2.2.1",
         "org.eclipse.jetty" % "jetty-server" % jettyVersion % "provided,jetty",
         "org.eclipse.jetty" % "jetty-websocket" % jettyVersion % "provided,jetty",
         "org.eclipse.jetty" % "jetty-webapp" % jettyVersion % "provided,jetty",
